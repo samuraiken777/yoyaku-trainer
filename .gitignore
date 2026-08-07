@@ -1,0 +1,10 @@
+# 問題文・解答はリポジトリに入れない（IndexedDB内にのみ置く）
+problems/
+data/
+*.local.*
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+.vscode/
+node_modules/

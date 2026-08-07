@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>要約トレーニング</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <button class="topbar-title" id="nav-home">要約トレーニング</button>
+  <div class="topbar-right">
+    <span class="cost-badge" id="cost-badge" title="このブラウザでの累計API利用額（概算）">¥0</span>
+    <button class="icon-btn" id="open-settings" aria-label="設定">⚙</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ══════════════ ホーム ══════════════ -->
+<section class="view active" data-view="home">
+  <div class="hero">
+    <h1>要約の練習をはじめる</h1>
+    <p class="muted">文章を登録して解くと、観点ごとに添削が返ります。</p>
+    <button class="btn primary big" id="go-create">＋ 新しい問題をつくる</button>
+  </div>
+
+  <h2>登録した問題</h2>
+  <div id="problem-list" class="card-list">
+    <p class="empty">まだ問題がありません。上のボタンから作ってください。</p>
+  </div>
+</section>
+
+<!-- ══════════════ 問題作成 ══════════════ -->
+<section class="view" data-view="create">
+  <h1>新しい問題をつくる</h1>
+
+  <div class="tabs" id="source-tabs">
+    <button class="tab active" data-tab="paste">貼り付け</button>
+    <button class="tab" data-tab="generate">AI生成</button>
+  </div>
+
+  <!-- ── AI生成 ── -->
+  <div class="tab-panel hidden" data-panel="generate">
+    <label class="field">
+      <span class="label">テーマ（任意）</span>
+      <input type="text" id="gen-theme" placeholder="例: 言語と思考／都市と共同体／技術と身体　※空欄ならAIが選びます">
+    </label>
+
+    <div class="row wrap">
+      <label class="field inline">
+        <span class="label">難易度</span>
+        <select id="gen-level">
+          <option value="common">共通テスト程度</option>
+          <option value="private" selected>私大標準</option>
+          <option value="hard">難関私大・国公立二次</option>
+        </select>
+      </label>
+      <label class="field inline narrow">
+        <span class="label">本文の分量</span>
+        <select id="gen-length">
+          <option value="800">800字</option>
+          <option value="1200" selected>1200字</option>
+          <option value="1600">1600字</option>
+        </select>
+      </label>
+    </div>
+
+    <button class="btn primary big" id="generate-btn">この条件で文章をつくる</button>
+    <p class="note">できた文章は「貼り付け」タブに入ります。目を通してから「分析して問題にする」を押してください（気に入らなければ作り直せます）。</p>
+  </div>
+
+  <!-- ── 貼り付け ── -->
+  <div class="tab-panel" data-panel="paste">
+    <label class="field">
+      <span class="label">問題文（評論・論説文の本文）</span>
+      <textarea id="src-text" rows="14" placeholder="問題集やプリントの本文をここに貼り付けてください。&#10;1000〜3000字くらいが練習に向いています。"></textarea>
+    </label>
+    <div class="row">
+      <span class="muted" id="src-count">0 字</span>
+      <label class="file-btn">
+        ファイルから読み込む（.txt）
+        <input type="file" id="src-file" accept=".txt,text/plain" hidden>
+      </label>
+    </div>
+
+    <div class="row wrap">
+      <label class="field inline">
+        <span class="label">タイトル（任意）</span>
+        <input type="text" id="src-title" placeholder="未入力ならAIが付けます">
+      </label>
+      <label class="field inline narrow">
+        <span class="label">指定字数</span>
+        <select id="src-chars">
+          <option value="0">おまかせ（AIが決める）</option>
+          <option value="80">80字</option>
+          <option value="100">100字</option>
+          <option value="120" selected>120字</option>
+          <option value="150">150字</option>
+          <option value="200">200字</option>
+        </select>
+      </label>
+    </div>
+
+    <button class="btn primary big" id="analyze-btn">この文章を分析して問題にする</button>
+    <p class="note">分析には Sonnet 5 を使います（1回あたり約4円、15〜30秒）。採点基準はここで1回だけ作り、以後の採点はすべて同じ基準で行われます。</p>
+  </div>
+</section>
+
+<!-- ══════════════ 演習 ══════════════ -->
+<section class="view" data-view="solve">
+  <div class="solve-head">
+    <h1 id="solve-title">—</h1>
+    <p class="muted" id="solve-meta"></p>
+  </div>
+
+  <div class="solve-grid">
+    <div class="pane source-pane">
+      <div class="pane-head">
+        <h2>本文</h2>
+        <button class="btn ghost small" id="clear-hl">マーカーを消す</button>
+      </div>
+      <p class="note hl-hint">大事だと思うところを指でなぞる／ドラッグするとマーカーが引けます。マーカーを押すと消えます。</p>
+      <div class="source-text" id="solve-source"></div>
+    </div>
+
+    <div class="pane answer-pane">
+      <h2>あなたの解答</h2>
+
+      <div class="input-switch">
+        <button class="seg active" data-input="type">キーボードで書く</button>
+        <button class="seg" data-input="photo">手書きを撮影</button>
+      </div>
+
+      <div class="input-panel" data-input-panel="type">
+        <textarea id="answer-text" rows="8" placeholder="ここに要約を書いてください。"></textarea>
+      </div>
+
+      <div class="input-panel hidden" data-input-panel="photo">
+        <label class="photo-drop">
+          <span id="photo-label">📷 解答用紙を撮影／写真を選ぶ</span>
+          <input type="file" id="answer-photo" accept="image/*" capture="environment" hidden>
+        </label>
+        <img id="photo-preview" class="photo-preview hidden" alt="撮影した解答">
+        <button class="btn" id="ocr-btn" disabled>この写真を読み取る</button>
+        <p class="note" id="ocr-note">読み取った文章は上の解答欄に入ります。誤読があればそのまま直してから採点してください。</p>
+      </div>
+
+      <div class="counter-row">
+        <span class="counter" id="answer-count">0 字</span>
+        <span class="muted" id="answer-target"></span>
+      </div>
+
+      <button class="btn primary big" id="grade-btn">採点する</button>
+      <p class="note" id="mode-note"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 添削結果 ══════════════ -->
+<section class="view" data-view="result">
+  <div id="result-body"></div>
+
+  <h2>レポートにする</h2>
+  <p class="note">問題文・解答・添削をまとめた1枚のレポートを作ります。先生や親に見せる、印刷して残す、といった使い方向け。</p>
+  <div class="row gap wrap">
+    <button class="btn primary" id="print-btn">📄 PDFで保存・印刷</button>
+    <button class="btn" id="html-btn">💾 HTMLで保存（メール等で送る）</button>
+  </div>
+
+  <div class="row gap">
+    <button class="btn" id="retry-btn">もう一度この問題を解く</button>
+    <button class="btn ghost" id="back-home">問題一覧にもどる</button>
+  </div>
+</section>
+
+<!-- ══════════════ 履歴 ══════════════ -->
+<section class="view" data-view="history">
+  <h1>これまでの記録</h1>
+  <div id="history-body"></div>
+</section>
+
+</main>
+
+<!-- ══════════════ 設定モーダル ══════════════ -->
+<div class="modal-backdrop hidden" id="settings-modal">
+  <div class="modal">
+    <h2>設定</h2>
+
+    <label class="field">
+      <span class="label">Anthropic APIキー</span>
+      <input type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off">
+    </label>
+    <p class="note">
+      キーはこの端末のブラウザ内（localStorage）にだけ保存され、どこにも送信されません。
+      <strong>支出上限を設定した専用キー</strong>を使ってください（README参照）。
+    </p>
+
+    <div class="row gap">
+      <button class="btn" id="test-btn">接続テスト</button>
+      <button class="btn primary" id="save-key">保存して閉じる</button>
+    </div>
+    <p id="test-result" class="test-result"></p>
+
+    <hr>
+
+    <label class="field">
+      <span class="label">品質と速さ</span>
+      <select id="preset-select"></select>
+    </label>
+    <p class="note" id="preset-note"></p>
+
+    <hr>
+    <div class="row between">
+      <span>累計API利用額（概算）<strong id="cost-total">¥0</strong></span>
+      <button class="btn ghost small" id="reset-cost">リセット</button>
+    </div>
+    <div class="row between">
+      <span class="muted small">保存データの全消去</span>
+      <button class="btn ghost small danger" id="wipe-data">すべて削除</button>
+    </div>
+    <button class="btn ghost" id="close-settings">閉じる</button>
+  </div>
+</div>
+
+<!-- ══════════════ 実行中オーバーレイ ══════════════ -->
+<div class="busy hidden" id="busy">
+  <div class="spinner"></div>
+  <p id="busy-text">処理中…</p>
+  <p class="muted small" id="busy-sub"></p>
+</div>
+
+<!-- 印刷用。画面には出ず、印刷時だけこれだけが出る -->
+<div id="print-area"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
