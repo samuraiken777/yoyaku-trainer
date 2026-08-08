@@ -2,6 +2,7 @@
 
 import { ASPECTS } from './prompts.js';
 import { weeklySummary } from './daily.js';
+import { CHARACTERS, ASPECT_CHAR, avatar } from './characters.js';
 import { clampScore, charStatus, countChars, diffChars } from './grading.js';
 
 export function esc(s) {
@@ -136,7 +137,10 @@ export function renderResult(problem, attempt) {
 
   const aspectsHtml = Object.entries(ASPECTS).map(([key, label]) => {
     const v = clampScore(r.aspectScores?.[key]);
-    return `<div class="aspect">
+    const charKey = ASPECT_CHAR[key];
+    const who = CHARACTERS[charKey]?.name || '';
+    return `<div class="aspect" title="${who}の担当">
+      ${avatar(charKey, 'xs')}
       <span>${label}</span>
       <span class="bar"><i style="width:${v}%"></i></span>
       <span class="muted">${v}</span>
@@ -192,20 +196,23 @@ export function renderResult(problem, attempt) {
 
   ${notesHtml}
 
-  <h2>総評</h2>
-  <div class="good-bad">
-    <div class="g">
-      <h3>できていた点</h3>
-      <ul>${(r.goodPoints || []).map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
-    </div>
-    <div class="b">
-      <h3>次に直すこと</h3>
-      <ul>${(r.improvePoints || []).map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+  <h2>ミニマル博士の総評</h2>
+  <div class="prof-block">
+    ${avatar('minimal', 'md', { alt: 'ミニマル博士' })}
+    <div class="good-bad">
+      <div class="g">
+        <h3>できていた点</h3>
+        <ul>${(r.goodPoints || []).map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+      </div>
+      <div class="b">
+        <h3>次に直すこと</h3>
+        <ul>${(r.improvePoints || []).map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+      </div>
     </div>
   </div>
 
   <details class="reveal">
-    <summary>あなたの解答を直した例を見る</summary>
+    <summary>${avatar('kotobaku', 'xs')}コトバクの直した例を見る</summary>
     <div class="body">
       <div class="char-tag">${charTag(r.revisedAnswer, target)}　<span class="was">（もとの解答は ${countChars(attempt.answer)}字）</span></div>
       <div class="sub-label">どこを直したか</div>
@@ -228,7 +235,7 @@ export function renderResult(problem, attempt) {
   </details>
 
   <details class="reveal">
-    <summary>本文を見る（採点項目の根拠をハイライト）</summary>
+    <summary>${avatar('gyuttori', 'xs')}本文を見る（採点項目の根拠をハイライト）</summary>
     <div class="body">${highlightSource(problem.text, problem.analysis.rubric)}</div>
   </details>
 

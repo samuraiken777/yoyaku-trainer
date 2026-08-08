@@ -102,14 +102,58 @@ h2 {
 .empty { color: var(--muted); padding: 26px 0; }
 hr { border: 0; border-top: 1px solid var(--border); margin: 18px 0; }
 
+/* ══ キャラクター ══ */
+:root {
+  --c-summaringo: #c8392e;
+  --c-gyuttori: #1c6fa6;
+  --c-youyakun: #c07a18;
+  --c-kotobaku: #6b3fa0;
+  --c-minimal: #2d6a4a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-summaringo: #ff7a6d;
+    --c-gyuttori: #63b2e6;
+    --c-youyakun: #e5ac4d;
+    --c-kotobaku: #b18cea;
+    --c-minimal: #57bd8d;
+  }
+}
+
+.char {
+  display: inline-block; vertical-align: middle;
+  border-radius: 50%; object-fit: cover;
+  background: var(--surface-2);
+  flex: none;
+}
+.char.xs { width: 26px; height: 26px; }
+.char.sm { width: 44px; height: 44px; }
+.char.md { width: 72px; height: 72px; }
+.char.lg { width: 92px; height: 92px; }
+
+h2 .char.xs, summary .char.xs { margin-right: 8px; }
+.note b { font-weight: 800; }
+.hl-hint b { color: var(--c-gyuttori); }
+.answer-pane > .note b { color: var(--c-youyakun); }
+
 /* ══ 今日の一言 ══ */
 .quote-card {
   position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 18px;
   border-radius: var(--radius);
   background: linear-gradient(135deg, var(--accent-soft), var(--surface));
   border: 1px solid var(--border);
   padding: 20px 22px 18px 26px;
   margin-bottom: 20px;
+}
+.quote-card .char.lg {
+  box-shadow: 0 3px 14px rgba(0, 0, 0, .1);
+  background: #fff;
+}
+.quote-body { min-width: 0; }
+@media (max-width: 520px) {
+  .quote-card { gap: 14px; padding: 16px 16px 16px 20px; }
+  .quote-card .char.lg { width: 64px; height: 64px; }
 }
 .quote-card::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
@@ -317,7 +361,23 @@ textarea:focus, input:focus, select:focus {
 .score-num.lo { color: var(--warn); }
 
 .aspects { display: grid; gap: 9px; margin: 16px 0 4px; }
-.aspect { display: grid; grid-template-columns: 8.5em 1fr 2.6em; align-items: center; gap: 10px; font-size: .88rem; font-weight: 600; }
+.aspect { display: grid; grid-template-columns: 26px 7.6em 1fr 2.6em; align-items: center; gap: 9px; font-size: .88rem; font-weight: 600; }
+@media (max-width: 400px) {
+  .aspect { grid-template-columns: 22px 6.8em 1fr 2.4em; gap: 7px; font-size: .82rem; }
+  .aspect .char.xs { width: 22px; height: 22px; }
+}
+
+/* 総評はミニマル博士が語る */
+.prof-block { display: flex; align-items: flex-start; gap: 16px; }
+.prof-block .char.md {
+  background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+  border: 2px solid var(--c-minimal);
+}
+.prof-block .good-bad { flex: 1; min-width: 0; }
+@media (max-width: 560px) {
+  .prof-block { gap: 12px; }
+  .prof-block .char.md { width: 52px; height: 52px; }
+}
 .bar { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
 .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-ink)); border-radius: 999px; }
 
@@ -438,12 +498,26 @@ details.reveal .sub-label:first-of-type { margin-top: 4px; }
 .busy p { margin: 0; }
 .busy #busy-text { font-weight: 800; font-size: 1.1rem; }
 .busy .muted { color: #b9c2d0; }
-.spinner {
-  width: 40px; height: 40px; border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, .18); border-top-color: var(--accent);
-  animation: spin .85s linear infinite;
+
+/* 待ち時間は担当キャラが出てくる */
+.busy-char { position: relative; width: 104px; height: 104px; }
+.busy-char img {
+  position: absolute; inset: 7px;
+  width: calc(100% - 14px); height: calc(100% - 14px);
+  object-fit: cover; border-radius: 50%; background: #fff;
+}
+.busy-char .ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, .16);
+  border-top-color: #fff;
+  animation: spin 1.1s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.busy-line {
+  font-size: .92rem; font-weight: 700; color: #fff;
+  max-width: 26rem; line-height: 1.6;
+}
 
 .busy-quote {
   margin-top: 22px; padding-top: 20px; max-width: 30rem;

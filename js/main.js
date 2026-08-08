@@ -13,6 +13,7 @@ import * as store from './storage.js';
 import { renderResult, renderHistory, renderUserHighlights, esc } from './render.js';
 import { fileToJpegBase64 } from './ocr.js';
 import { quoteOfTheDay, computeStreak, streakMessage } from './daily.js';
+import { CHARACTERS } from './characters.js';
 import { exportProblem, exportBackup, readTransferFile, TransferError } from './transfer.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -59,10 +60,15 @@ function elapsedSec() {
   return state.startedAt ? Math.round((Date.now() - state.startedAt) / 1000) : null;
 }
 
-function busy(text, sub = '') {
+function busy(text, sub = '', charKey = 'summaringo') {
   const q = quoteOfTheDay();
+  const c = CHARACTERS[charKey] || CHARACTERS.summaringo;
+
   $('#busy-text').textContent = text;
   $('#busy-sub').textContent = sub;
+  $('#busy-char-img').src = c.img;
+  $('#busy-char-img').alt = c.name;
+  $('#busy-line').textContent = `${c.name}「${c.line}」`;
   $('#busy-quote-ja').textContent = q.ja;
   $('#busy-quote-en').textContent = q.en;
   $('#busy').classList.remove('hidden');
@@ -255,7 +261,7 @@ $('#generate-btn').onclick = async () => {
   const level = $('#gen-level').value;
   const length = Number($('#gen-length').value);
 
-  busy('練習用の文章を書いています…', `${length}字程度の評論文（15〜30秒）`);
+  busy('練習用の文章を書いています…', `${length}字程度の評論文（15〜30秒）`, 'summaringo');
   try {
     const { system, messages } = generateMessages({ theme, level, length });
     const { json } = await callClaude({
@@ -300,7 +306,7 @@ $('#analyze-btn').onclick = async () => {
   }
 
   const targetChars = Number($('#src-chars').value);
-  busy('この文章を分析しています…', `${getPreset().desc} で模範解答と採点基準を作っています`);
+  busy('この文章を分析しています…', `${getPreset().desc} で模範解答と採点基準を作っています`, 'youyakun');
 
   try {
     const { system, messages } = analyzeMessages(text, targetChars);
@@ -316,7 +322,7 @@ $('#analyze-btn').onclick = async () => {
     const finalTarget = targetChars || json.recommendedChars;
     json.modelAnswer = await fitToLength(
       json.modelAnswer, finalTarget, 'model',
-      (m) => busy('この文章を分析しています…', m),
+      (m) => busy('字数を調整しています…', m, 'kotobaku'),
     );
 
     const problem = {
@@ -515,7 +521,7 @@ $('#answer-photo').addEventListener('change', async (e) => {
 
 $('#ocr-btn').onclick = async () => {
   if (!state.photoBase64) return;
-  busy('手書きの文字を読み取っています…', '読み取り後に自分で直せます');
+  busy('手書きの文字を読み取っています…', '読み取り後に自分で直せます', 'gyuttori');
   try {
     const { system, messages } = ocrMessages(state.photoBase64);
     const { json } = await callClaude({
@@ -552,7 +558,7 @@ $('#grade-btn').onclick = async () => {
     return;
   }
 
-  busy('採点しています…', `${getPreset().desc} で採点基準に沿って添削しています`);
+  busy('採点しています…', `${getPreset().desc} で採点基準に沿って添削しています`, 'minimal');
 
   try {
     const charCount = countChars(answer);
@@ -576,7 +582,7 @@ $('#grade-btn').onclick = async () => {
     // 直した例が指定字数を超えていたら詰め直させる
     json.revisedAnswer = await fitToLength(
       json.revisedAnswer, problem.targetChars, 'revised',
-      (m) => busy('採点しています…', m),
+      (m) => busy('字数を調整しています…', m, 'kotobaku'),
     );
 
     const attempt = {

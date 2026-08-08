@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Summaringo</title>
+<link rel="icon" href="img/favicon.png" sizes="64x64">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Summaringo">
+<meta name="theme-color" content="#2b55d9">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -21,9 +25,12 @@
 <!-- ══════════════ ホーム ══════════════ -->
 <section class="view active" data-view="home">
   <div class="quote-card">
-    <div class="quote-label">今日の一言</div>
-    <p class="quote-ja" id="quote-ja"></p>
-    <p class="quote-en" id="quote-en"></p>
+    <img class="char lg char-summaringo" src="img/summaringo.webp" alt="サマリンゴ" width="320" height="320">
+    <div class="quote-body">
+      <div class="quote-label">サマリンゴの 今日の一言</div>
+      <p class="quote-ja" id="quote-ja"></p>
+      <p class="quote-en" id="quote-en"></p>
+    </div>
   </div>
 
   <div class="hero">
@@ -127,15 +134,16 @@
   <div class="solve-grid">
     <div class="pane source-pane">
       <div class="pane-head">
-        <h2>本文</h2>
+        <h2><img class="char xs char-gyuttori" src="img/gyuttori.webp" alt="" width="320" height="320">本文</h2>
         <button class="btn ghost small" id="clear-hl">マーカーを消す</button>
       </div>
-      <p class="note hl-hint">大事だと思うところを指でなぞる／ドラッグするとマーカーが引けます。マーカーを押すと消えます。</p>
+      <p class="note hl-hint"><b>ギュットリ</b>「大事だと思う言葉に線を引いてみて。指でなぞる／ドラッグで引けるよ。引いた線は押すと消えるよ」</p>
       <div class="source-text" id="solve-source"></div>
     </div>
 
     <div class="pane answer-pane">
-      <h2>あなたの解答</h2>
+      <h2><img class="char xs char-youyakun" src="img/youyakun.webp" alt="" width="320" height="320">あなたの解答</h2>
+      <p class="note"><b>ヨウヤクン</b>「筆者がいちばん言いたいことは何だ？ そこを外さずに書こう」</p>
 
       <div class="input-switch">
         <button class="seg active" data-input="type">キーボードで書く</button>
@@ -250,9 +258,13 @@
 
 <!-- ══════════════ 実行中オーバーレイ ══════════════ -->
 <div class="busy hidden" id="busy">
-  <div class="spinner"></div>
+  <div class="busy-char">
+    <span class="ring"></span>
+    <img id="busy-char-img" src="img/summaringo.webp" alt="" width="320" height="320">
+  </div>
   <p id="busy-text">処理中…</p>
   <p class="muted small" id="busy-sub"></p>
+  <p class="busy-line" id="busy-line"></p>
   <div class="busy-quote">
     <p class="bq-ja" id="busy-quote-ja"></p>
     <p class="bq-en" id="busy-quote-en"></p>
