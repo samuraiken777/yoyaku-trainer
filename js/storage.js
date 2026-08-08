@@ -85,9 +85,56 @@ export async function listAttempts(problemId = null) {
   return filtered.sort((a, b) => b.createdAt - a.createdAt);
 }
 
+/* ────────────── 解答の下書き ──────────────
+   書きかけのままアプリを閉じても消えないように、
+   入力のたびに localStorage へ退避しておく。           */
+
+const DRAFT_PREFIX = 'summaringo.draft.';
+
+export function saveDraft(problemId, text) {
+  if (text && text.trim()) localStorage.setItem(DRAFT_PREFIX + problemId, text);
+  else localStorage.removeItem(DRAFT_PREFIX + problemId);
+}
+
+export function loadDraft(problemId) {
+  return localStorage.getItem(DRAFT_PREFIX + problemId) || '';
+}
+
+export function clearDraft(problemId) {
+  localStorage.removeItem(DRAFT_PREFIX + problemId);
+}
+
+/* ────────────── 書き出し・読み込み ────────────── */
+
+export async function exportAll() {
+  return { problems: await listProblems(), attempts: await listAttempts() };
+}
+
+/**
+ * 既存データを消さずに取り込む。同じIDのものは飛ばすので、
+ * 同じバックアップを二度読み込んでも重複しない。
+ */
+export async function importData({ problems = [], attempts = [] }) {
+  const haveP = new Set((await listProblems()).map((p) => p.id));
+  const haveA = new Set((await listAttempts()).map((a) => a.id));
+
+  let addedProblems = 0;
+  let addedAttempts = 0;
+  for (const p of problems) {
+    if (p?.id && !haveP.has(p.id)) { await saveProblem(p); addedProblems++; }
+  }
+  for (const a of attempts) {
+    if (a?.id && !haveA.has(a.id)) { await saveAttempt(a); addedAttempts++; }
+  }
+  return { addedProblems, addedAttempts };
+}
+
 /* ────────────── 全消去 ────────────── */
 
 export async function wipeAll() {
   await tx('problems', 'readwrite', (s) => s.clear());
   await tx('attempts', 'readwrite', (s) => s.clear());
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith(DRAFT_PREFIX)) localStorage.removeItem(key);
+  }
 }

@@ -8,7 +8,7 @@
 
 import { ASPECTS } from './prompts.js';
 import { countChars, clampScore } from './grading.js';
-import { esc, charTag, highlightAnswer, highlightSource, renderDiff, MARK } from './render.js';
+import { esc, charTag, highlightAnswer, highlightSource, renderDiff, durationLabel, MARK } from './render.js';
 
 /* ────────────── レポート用スタイル ──────────────
    .rpt 配下に閉じてあるので、アプリ画面に混ぜても
@@ -152,7 +152,7 @@ export function buildReportHtml(problem, attempt) {
 
   return `<div class="rpt">
   <div class="doc-head">
-    <div class="app">要約トレーニング　添削レポート</div>
+    <div class="app">Summaringo　添削レポート</div>
     <h1>${esc(problem.title)}</h1>
     <div class="sub">${esc(problem.theme)}　|　指定字数 ${target}字　|　採点日時 ${stamp(attempt.createdAt)}${attempt.inputMethod === 'photo' ? '　|　手書き解答を撮影' : ''}</div>
   </div>
@@ -160,7 +160,7 @@ export function buildReportHtml(problem, attempt) {
   <div class="sec">
     <div class="scorebox">
       <div class="num">${clampScore(r.totalScore)}<span> / 100点</span></div>
-      <div class="len">${charTag(attempt.answer, target)}</div>
+      <div class="len">${charTag(attempt.answer, target)}${durationLabel(attempt.durationSec)}</div>
     </div>
     <div class="aspects">${aspectRows}</div>
   </div>
@@ -220,7 +220,7 @@ export function buildReportHtml(problem, attempt) {
     <div class="legend">緑＝採点項目の根拠　／　黄色＝解答者が引いたマーカー</div>
   </div>
 
-  <div class="foot">このレポートは「要約トレーニング」で自動採点したものです。採点はAIによるもので、教員による採点を代替するものではありません。</div>
+  <div class="foot">このレポートは Summaringo で自動採点したものです。採点はAIによるもので、教員による採点を代替するものではありません。</div>
 </div>`;
 }
 

@@ -1,6 +1,7 @@
 // 添削結果と履歴の描画。
 
 import { ASPECTS } from './prompts.js';
+import { weeklySummary } from './daily.js';
 import { clampScore, charStatus, countChars, diffChars } from './grading.js';
 
 export function esc(s) {
@@ -109,6 +110,14 @@ export function charTag(text, target) {
 
 export const MARK = { hit: ['○', 'hit'], partial: ['△', 'partial'], miss: ['×', 'miss'] };
 
+/** 「・所要 4分12秒」。計測がない古い記録では何も出さない。 */
+export function durationLabel(sec) {
+  if (typeof sec !== 'number' || sec <= 0) return '';
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `　所要 ${m ? `${m}分` : ''}${s}秒`;
+}
+
 /** 点数帯で色を変える。 */
 function scoreClass(n) {
   const v = clampScore(n);
@@ -161,9 +170,9 @@ export function renderResult(problem, attempt) {
 
   return `
   <div class="score-head">
-    <div class="score-num ${scoreClass(r.totalScore)}">${clampScore(r.totalScore)}<small> / 100</small></div>
+    <div class="score-num ${scoreClass(r.totalScore)}"><span class="score-val">${clampScore(r.totalScore)}</span><small> / 100</small></div>
     <div>
-      <div><strong>${attempt.charCount}字</strong>${target ? ` / 指定 ${target}字（${statusLabel}）` : ''}</div>
+      <div><strong>${attempt.charCount}字</strong>${target ? ` / 指定 ${target}字（${statusLabel}）` : ''}${durationLabel(attempt.durationSec)}</div>
       <div class="muted small">${new Date(attempt.createdAt).toLocaleString('ja-JP')}${attempt.inputMethod === 'photo' ? '・手書きを撮影' : ''}</div>
     </div>
   </div>
@@ -252,7 +261,7 @@ function sparkline(values) {
 
 export function renderHistory(attempts, problemsById) {
   if (!attempts.length) {
-    return '<p class="empty">まだ採点した記録がありません。</p>';
+    return '<p class="empty">まだ記録がありません。1本書くとここに残ります。</p>';
   }
 
   const chrono = [...attempts].reverse(); // 古い順
@@ -282,15 +291,36 @@ export function renderHistory(attempts, problemsById) {
     </div>`;
   }).join('');
 
+  const wk = weeklySummary(attempts);
+  const deltaHtml = wk.delta === null
+    ? '<span class="muted">先週と比べられるのは来週から</span>'
+    : wk.delta === 0
+      ? '<span class="muted">先週と同じ</span>'
+      : `<span class="${wk.delta > 0 ? 'up' : 'down'}">先週より ${wk.delta > 0 ? '+' : ''}${wk.delta}点</span>`;
+
+  const weekHtml = `
+    <div class="week-card">
+      <div class="week-label">今週（月曜から）</div>
+      <div class="week-stats">
+        <span><strong>${wk.cur.days}</strong>日</span>
+        <span><strong>${wk.cur.count}</strong>本</span>
+        <span>平均 <strong>${wk.cur.avg ?? '—'}</strong>点</span>
+        ${deltaHtml}
+      </div>
+      <div class="muted small">先週: ${wk.prev.days}日・${wk.prev.count}本・平均 ${wk.prev.avg ?? '—'}点</div>
+    </div>`;
+
   return `
-    <h2>総合点の推移（${attempts.length}回）</h2>
+    ${weekHtml}
+
+    <h2>総合点の推移（${attempts.length}本）</h2>
     ${sparkline(scores) || '<p class="muted">2回以上解くとグラフが出ます。</p>'}
 
     <h2>観点別の平均（直近${recent.length}回）</h2>
     <div class="aspects">${aspectsHtml}</div>
     <p class="note">いま一番の課題は<strong>「${ASPECTS[weakest[0]]}」</strong>（平均${weakest[1]}点）です。</p>
 
-    <h2>解いた記録</h2>
+    <h2>書いた記録</h2>
     <div>${rowsHtml}</div>
   `;
 }

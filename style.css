@@ -149,6 +149,28 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 18px 0; }
 .streak-msg.todo { color: var(--accent); }
 .streak-total { color: var(--muted); font-size: .82rem; margin-left: auto; }
 
+/* ══ 週次サマリー ══ */
+.week-card {
+  border: 1px solid var(--border); border-left: 4px solid var(--accent);
+  border-radius: var(--radius); background: var(--surface);
+  padding: 15px 18px; margin-bottom: 6px;
+}
+.week-label {
+  font-size: .72rem; font-weight: 800; letter-spacing: .14em;
+  color: var(--muted); margin-bottom: 4px;
+}
+.week-stats {
+  display: flex; gap: 18px; flex-wrap: wrap; align-items: baseline;
+  font-size: .92rem; margin-bottom: 3px;
+}
+.week-stats strong { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.week-stats .up { color: var(--good); font-weight: 800; }
+.week-stats .down { color: var(--warn); font-weight: 800; }
+
+/* ファイル選択を普通のボタンに見せる */
+.import-btn { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.card-tools { display: flex; gap: 8px; }
+
 /* ══ ボタン ══ */
 .btn {
   appearance: none; font: inherit; font-weight: 600;
@@ -269,7 +291,13 @@ textarea:focus, input:focus, select:focus {
 .photo-drop:hover { border-color: var(--accent); color: var(--accent); }
 .photo-preview { width: 100%; border-radius: var(--radius); margin-top: 12px; }
 
-.counter-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; }
+.counter-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 10px; }
+.timer {
+  margin-left: auto; font-variant-numeric: tabular-nums;
+  font-size: .85rem; font-weight: 700; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 1px 11px;
+}
 .counter { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 1.05rem; }
 .counter.ok { color: var(--good); }
 .counter.over { color: var(--bad); }

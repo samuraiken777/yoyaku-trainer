@@ -54,3 +54,48 @@ export function computeStreak(attempts) {
 
   return { count, doneToday, total: days.size };
 }
+
+/** ストリークの状態に応じた一言。淡々と、でも積み上がりが見えるように。 */
+export function streakMessage({ count, doneToday, total }) {
+  if (!total) return { cls: 'todo', text: 'まずは1本。ここから始まる。' };
+
+  if (doneToday) {
+    if (count >= 30) return { cls: 'done', text: '今日のぶんも書けた。もう習慣だ。' };
+    if (count >= 7)  return { cls: 'done', text: '今日のぶんも書けた。いい流れ。' };
+    if (count >= 2)  return { cls: 'done', text: '今日のぶんも書けた。' };
+    return { cls: 'done', text: '今日のぶん、完了。' };
+  }
+
+  if (count > 0) return { cls: 'todo', text: `今日のぶんがまだ。${count}日の流れを切らすな。` };
+  return { cls: 'todo', text: '今日からまた積み上げよう。' };
+}
+
+/* ────────────── 週次サマリー ────────────── */
+
+/** その週の月曜日 0:00。 */
+function weekStart(base) {
+  const d = new Date(base);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // 月曜始まり
+  return d;
+}
+
+function bucket(attempts, from, to) {
+  const list = attempts.filter((a) => a.createdAt >= from && (to === null || a.createdAt < to));
+  const days = new Set(list.map((a) => dayKey(a.createdAt))).size;
+  const scores = list.map((a) => a.result?.totalScore).filter((s) => typeof s === 'number');
+  const avg = scores.length ? Math.round(scores.reduce((s, v) => s + v, 0) / scores.length) : null;
+  return { days, count: list.length, avg };
+}
+
+/** 今週と先週の成績。先週と比べた平均点の差も返す。 */
+export function weeklySummary(attempts) {
+  const thisWeek = weekStart(new Date()).getTime();
+  const lastWeek = thisWeek - 7 * 86400000;
+
+  const cur = bucket(attempts, thisWeek, null);
+  const prev = bucket(attempts, lastWeek, thisWeek);
+  const delta = cur.avg !== null && prev.avg !== null ? cur.avg - prev.avg : null;
+
+  return { cur, prev, delta };
+}

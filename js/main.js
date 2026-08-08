@@ -12,7 +12,8 @@ import { fitToLength } from './fit.js';
 import * as store from './storage.js';
 import { renderResult, renderHistory, renderUserHighlights, esc } from './render.js';
 import { fileToJpegBase64 } from './ocr.js';
-import { quoteOfTheDay, computeStreak } from './daily.js';
+import { quoteOfTheDay, computeStreak, streakMessage } from './daily.js';
+import { exportProblem, exportBackup, readTransferFile, TransferError } from './transfer.js';
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -29,7 +30,33 @@ const state = {
 
 function show(view) {
   $$('.view').forEach((v) => v.classList.toggle('active', v.dataset.view === view));
+  if (view !== 'solve') stopTimer();
   window.scrollTo(0, 0);
+}
+
+/* ── 経過時間 ── */
+
+let timerId = null;
+
+function paintTimer() {
+  const s = Math.max(0, Math.round((Date.now() - state.startedAt) / 1000));
+  $('#answer-timer').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function startTimer() {
+  state.startedAt = Date.now();
+  clearInterval(timerId);
+  paintTimer();
+  timerId = setInterval(paintTimer, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerId);
+  timerId = null;
+}
+
+function elapsedSec() {
+  return state.startedAt ? Math.round((Date.now() - state.startedAt) / 1000) : null;
 }
 
 function busy(text, sub = '') {
@@ -129,20 +156,20 @@ $('#wipe-data').onclick = async () => {
 /* ══════════════ ホーム ══════════════ */
 
 function paintStreak(attempts) {
-  const { count, doneToday, total } = computeStreak(attempts);
+  const streak = computeStreak(attempts);
+  const msg = streakMessage(streak);
   const el = $('#streak-row');
 
-  if (!total) {
-    el.innerHTML = '<span class="streak-msg todo">まずは1問。ここから始まる。</span>';
+  if (!streak.total) {
+    el.innerHTML = `<span class="streak-msg ${msg.cls}">${msg.text}</span>`;
     return;
   }
 
-  const flame = count > 0 ? `<span class="streak-badge">🔥 ${count}日連続</span>` : '';
-  const today = doneToday
-    ? '<span class="streak-msg done">✓ 今日はもう解いた</span>'
-    : '<span class="streak-msg todo">今日の1問がまだ</span>';
+  const flame = streak.count > 0 ? `<span class="streak-badge">🔥 ${streak.count}日連続</span>` : '';
+  const check = msg.cls === 'done' ? '✓ ' : '';
 
-  el.innerHTML = `${flame}${today}<span class="streak-total">通算 ${total}日・${attempts.length}回</span>`;
+  el.innerHTML = `${flame}<span class="streak-msg ${msg.cls}">${check}${esc(msg.text)}</span>`
+    + `<span class="streak-total">通算 ${streak.total}日・${attempts.length}本</span>`;
 }
 
 async function refreshHome() {
@@ -161,21 +188,30 @@ async function refreshHome() {
     const mine = attempts.filter((a) => a.problemId === p.id);
     const last = mine[0];
     const meta = mine.length
-      ? `${mine.length}回解答・最新 ${last.result.totalScore}点`
-      : '未解答';
+      ? `${mine.length}回・最新 ${last.result.totalScore}点`
+      : 'まだ書いていない';
     return `<div class="card" data-id="${p.id}">
       <h3>${esc(p.title)}</h3>
       <div class="meta">${esc(p.theme)}　|　${p.targetChars}字　|　${meta}</div>
       <div class="excerpt">${esc(p.text.slice(0, 90))}…</div>
       <div class="row between">
-        <button class="btn small open-btn">解く</button>
-        <button class="btn ghost small danger del-btn">削除</button>
+        <button class="btn small open-btn">書く</button>
+        <span class="card-tools">
+          <button class="btn ghost small share-btn" title="この問題をファイルに書き出して他の端末に渡す">書き出す</button>
+          <button class="btn ghost small danger del-btn">削除</button>
+        </span>
       </div>
     </div>`;
   }).join('');
 
   list.querySelectorAll('.open-btn').forEach((b) => {
     b.onclick = () => openSolve(b.closest('.card').dataset.id);
+  });
+  list.querySelectorAll('.share-btn').forEach((b) => {
+    b.onclick = async () => {
+      const p = await store.getProblem(b.closest('.card').dataset.id);
+      if (p) exportProblem(p);
+    };
   });
   list.querySelectorAll('.del-btn').forEach((b) => {
     b.onclick = async () => {
@@ -320,7 +356,12 @@ async function openSolve(problemOrId) {
   $('#solve-title').textContent = problem.title;
   $('#solve-meta').textContent = `${problem.theme}　|　${problem.targetChars}字にまとめる`;
   paintSource();
-  $('#answer-text').value = '';
+
+  // 書きかけが残っていれば戻す
+  const draft = store.loadDraft(problem.id);
+  $('#answer-text').value = draft;
+  $('#draft-note').classList.toggle('hidden', !draft);
+
   $('#answer-target').textContent = `目標 ${problem.targetChars}字`;
   $('#photo-preview').classList.add('hidden');
   $('#photo-label').textContent = '📷 解答用紙を撮影／写真を選ぶ';
@@ -330,6 +371,7 @@ async function openSolve(problemOrId) {
   paintPreset();
 
   show('solve');
+  startTimer();
 }
 
 function switchInput(mode) {
@@ -350,7 +392,15 @@ function updateAnswerCount() {
   }
 }
 
-$('#answer-text').addEventListener('input', updateAnswerCount);
+let draftTimer;
+$('#answer-text').addEventListener('input', () => {
+  updateAnswerCount();
+  $('#draft-note').classList.add('hidden');
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => {
+    if (state.problem) store.saveDraft(state.problem.id, $('#answer-text').value);
+  }, 400);
+});
 
 /* ── 本文のマーカー ── */
 
@@ -536,17 +586,20 @@ $('#grade-btn').onclick = async () => {
       inputMethod: state.inputMethod === 'photo' ? 'photo' : 'type',
       charCount,
       copiedSpans,
+      durationSec: elapsedSec(),
       result: json,
       createdAt: Date.now(),
     };
 
     await store.saveAttempt(attempt);
+    store.clearDraft(problem.id);
     state.attempt = attempt;
     updateCost();
     idle();
 
     $('#result-body').innerHTML = renderResult(problem, attempt);
     show('result');
+    animateScore(json.totalScore);
   } catch (e) {
     idle();
     fail(e);
@@ -554,6 +607,76 @@ $('#grade-btn').onclick = async () => {
 };
 
 $('#retry-btn').onclick = () => openSolve(state.problem);
+
+/** 点数を0から数え上げる。 */
+function animateScore(target) {
+  const el = $('#result-body .score-val');
+  if (!el) return;
+
+  const end = Math.max(0, Math.min(100, Math.round(target)));
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.textContent = end;
+    return;
+  }
+
+  const DURATION = 900;
+  const t0 = performance.now();
+  const step = (now) => {
+    const p = Math.min(1, (now - t0) / DURATION);
+    const eased = 1 - (1 - p) ** 3; // 最後にゆっくり止まる
+    el.textContent = Math.round(end * eased);
+    if (p < 1) requestAnimationFrame(step);
+  };
+  el.textContent = '0';
+  requestAnimationFrame(step);
+}
+
+/* ══════════════ 問題・データの受け渡し ══════════════ */
+
+async function handleImport(file, expectBackup) {
+  try {
+    const data = await readTransferFile(file);
+    const added = await store.importData(data);
+
+    if (data.kind === 'problem') {
+      if (!added.addedProblems) {
+        alert('この問題はすでに入っています。');
+      } else {
+        alert(`問題「${data.problems[0].title}」を読み込みました。`);
+      }
+    } else {
+      alert(`復元しました。問題 ${added.addedProblems}件、記録 ${added.addedAttempts}件を追加しました。\n（すでにあるものは重複しないように飛ばしています）`);
+    }
+
+    if (expectBackup) closeSettings();
+    await refreshHome();
+    show('home');
+  } catch (e) {
+    if (e instanceof TransferError) alert(e.message);
+    else fail(e);
+  }
+}
+
+$('#import-problem').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (f) handleImport(f, false);
+});
+
+$('#import-backup').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (f) handleImport(f, true);
+});
+
+$('#export-backup').onclick = async () => {
+  const data = await store.exportAll();
+  if (!data.problems.length && !data.attempts.length) {
+    alert('まだ書き出すデータがありません。');
+    return;
+  }
+  exportBackup(data);
+};
 
 /* ══════════════ レポート出力 ══════════════ */
 
