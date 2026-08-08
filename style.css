@@ -16,6 +16,9 @@
   --note-hl: #fde0dd;
   --evidence-hl: #d9ecdf;
   --user-hl: #ffe86b;
+  /* 差分（削除／追加）の文字色。地の明るさに合わせて別に持つ */
+  --diff-del-fg: #9e2a20;
+  --diff-ins-fg: #0d6844;
   --radius: 12px;
   --maxw: 1120px;
   --shadow: 0 1px 2px rgba(18, 22, 29, .05), 0 4px 16px rgba(18, 22, 29, .05);
@@ -36,10 +39,14 @@
     --good: #3fbe86;
     --warn: #e0a33f;
     --bad: #f0655a;
-    --copy-hl: #4a3f1c;
-    --note-hl: #4d2b28;
-    --evidence-hl: #1f3f2d;
-    --user-hl: #6b5a13;
+    /* 暗い地の上でも「線が引いてある」と分かる明るさにする。
+       暗くしすぎると背景と一体化して真っ黒に見えてしまう。 */
+    --copy-hl: #61511f;
+    --note-hl: #6e3630;
+    --evidence-hl: #205640;
+    --user-hl: #7d6812;
+    --diff-del-fg: #ffb0a6;
+    --diff-ins-fg: #86e8ba;
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 16px rgba(0, 0, 0, .25);
   }
 }
@@ -445,17 +452,20 @@ details.reveal .sub-label:first-of-type { margin-top: 4px; }
   border: 1px solid var(--border); border-radius: 10px;
   padding: 13px 15px; background: var(--bg); line-height: 2.2;
 }
-.diff-view del {
-  background: var(--note-hl); text-decoration: line-through;
-  text-decoration-color: var(--bad); text-decoration-thickness: 2px;
+/* 背景だけに頼ると暗い画面で沈むので、文字色でも赤＝削除／緑＝追加を示す */
+.diff-view del, .diff-legend del {
+  background: var(--note-hl); color: var(--diff-del-fg);
+  text-decoration: line-through; text-decoration-color: var(--diff-del-fg);
+  text-decoration-thickness: 2px;
+  border-radius: 3px; padding: 1px 2px;
 }
-.diff-view ins {
-  background: var(--evidence-hl); text-decoration: underline;
-  text-decoration-color: var(--good); text-decoration-thickness: 2px; font-weight: 700;
+.diff-view ins, .diff-legend ins {
+  background: var(--evidence-hl); color: var(--diff-ins-fg);
+  text-decoration: underline; text-decoration-color: var(--diff-ins-fg);
+  text-decoration-thickness: 2px; font-weight: 700;
+  border-radius: 3px; padding: 1px 2px;
 }
 .diff-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: .8rem; color: var(--muted); margin-top: 7px; }
-.diff-legend del { background: var(--note-hl); text-decoration-color: var(--bad); }
-.diff-legend ins { background: var(--evidence-hl); text-decoration-color: var(--good); }
 
 .attempt-row {
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
