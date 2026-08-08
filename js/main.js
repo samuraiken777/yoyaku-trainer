@@ -12,6 +12,7 @@ import { fitToLength } from './fit.js';
 import * as store from './storage.js';
 import { renderResult, renderHistory, renderUserHighlights, esc } from './render.js';
 import { fileToJpegBase64 } from './ocr.js';
+import { quoteOfTheDay, computeStreak } from './daily.js';
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -32,8 +33,11 @@ function show(view) {
 }
 
 function busy(text, sub = '') {
+  const q = quoteOfTheDay();
   $('#busy-text').textContent = text;
   $('#busy-sub').textContent = sub;
+  $('#busy-quote-ja').textContent = q.ja;
+  $('#busy-quote-en').textContent = q.en;
   $('#busy').classList.remove('hidden');
 }
 
@@ -124,10 +128,29 @@ $('#wipe-data').onclick = async () => {
 
 /* ══════════════ ホーム ══════════════ */
 
+function paintStreak(attempts) {
+  const { count, doneToday, total } = computeStreak(attempts);
+  const el = $('#streak-row');
+
+  if (!total) {
+    el.innerHTML = '<span class="streak-msg todo">まずは1問。ここから始まる。</span>';
+    return;
+  }
+
+  const flame = count > 0 ? `<span class="streak-badge">🔥 ${count}日連続</span>` : '';
+  const today = doneToday
+    ? '<span class="streak-msg done">✓ 今日はもう解いた</span>'
+    : '<span class="streak-msg todo">今日の1問がまだ</span>';
+
+  el.innerHTML = `${flame}${today}<span class="streak-total">通算 ${total}日・${attempts.length}回</span>`;
+}
+
 async function refreshHome() {
   const problems = await store.listProblems();
   const attempts = await store.listAttempts();
   const list = $('#problem-list');
+
+  paintStreak(attempts);
 
   if (!problems.length) {
     list.innerHTML = '<p class="empty">まだ問題がありません。上のボタンから作ってください。</p>';
@@ -561,6 +584,10 @@ document.addEventListener('click', (e) => {
 /* ══════════════ 起動 ══════════════ */
 
 (async function init() {
+  const q = quoteOfTheDay();
+  $('#quote-ja').textContent = q.ja;
+  $('#quote-en').textContent = q.en;
+
   updateCost();
   await refreshHome();
 

@@ -20,9 +20,14 @@
 
 <!-- ══════════════ ホーム ══════════════ -->
 <section class="view active" data-view="home">
+  <div class="quote-card">
+    <div class="quote-label">今日の一言</div>
+    <p class="quote-ja" id="quote-ja"></p>
+    <p class="quote-en" id="quote-en"></p>
+  </div>
+
   <div class="hero">
-    <h1>要約の練習をはじめる</h1>
-    <p class="muted">文章を登録して解くと、観点ごとに添削が返ります。</p>
+    <div class="streak-row" id="streak-row"></div>
     <button class="btn primary big" id="go-create">＋ 新しい問題をつくる</button>
   </div>
 
@@ -229,6 +234,10 @@
   <div class="spinner"></div>
   <p id="busy-text">処理中…</p>
   <p class="muted small" id="busy-sub"></p>
+  <div class="busy-quote">
+    <p class="bq-ja" id="busy-quote-ja"></p>
+    <p class="bq-en" id="busy-quote-en"></p>
+  </div>
 </div>
 
 <!-- 印刷用。画面には出ず、印刷時だけこれだけが出る -->

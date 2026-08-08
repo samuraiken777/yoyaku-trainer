@@ -109,6 +109,14 @@ export function charTag(text, target) {
 
 export const MARK = { hit: ['○', 'hit'], partial: ['△', 'partial'], miss: ['×', 'miss'] };
 
+/** 点数帯で色を変える。 */
+function scoreClass(n) {
+  const v = clampScore(n);
+  if (v >= 80) return 'hi';
+  if (v >= 60) return 'mid';
+  return 'lo';
+}
+
 export function renderResult(problem, attempt) {
   const r = attempt.result;
   const target = problem.targetChars;
@@ -153,7 +161,7 @@ export function renderResult(problem, attempt) {
 
   return `
   <div class="score-head">
-    <div class="score-num">${clampScore(r.totalScore)}<small> / 100</small></div>
+    <div class="score-num ${scoreClass(r.totalScore)}">${clampScore(r.totalScore)}<small> / 100</small></div>
     <div>
       <div><strong>${attempt.charCount}字</strong>${target ? ` / 指定 ${target}字（${statusLabel}）` : ''}</div>
       <div class="muted small">${new Date(attempt.createdAt).toLocaleString('ja-JP')}${attempt.inputMethod === 'photo' ? '・手書きを撮影' : ''}</div>
